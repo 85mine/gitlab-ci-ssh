@@ -1,0 +1,26 @@
+image: alpine:3.7
+
+stages:
+  - deploy
+
+before_script:
+  - mkdir -p ~/.ssh/
+  - touch ~/.ssh/config
+  - touch ~/.ssh/known_hosts
+  - apk update && apk upgrade && apk add --no-cache bash git openssh
+  - TODAY="$(date +"%Y%m%d")"
+
+deploy_production:
+  stage: deploy
+  environment: Production
+  script:
+    - echo -e "$SSH_PRIVATE_KEY" # SSH KEY IN GITLAB-CI SETTING
+    - echo -e "$SSH_PRIVATE_KEY" > ~/.ssh/id_rsa
+    - chmod 600 ~/.ssh/id_rsa
+    - echo -e "Host *\n\tStrictHostKeyChecking no\n\n" > ~/.ssh/config
+    - printf '\e[38;5;196m Deploying...🚀\n';
+    - ssh -o 'RequestTTY force' {user}@{ip-address} "cd {path_of_source} && git checkout master && git branch -D master_$TODAY >> /dev/null 2>&1 ; git branch master_$TODAY && git pull origin master"
+    - printf '\e[38;5;196m Done✌\n';
+  when: manual
+  only:
+    - master
